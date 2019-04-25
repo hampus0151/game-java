@@ -10,7 +10,7 @@ import java.util.Random;
 import javax.swing.JOptionPane;
 
 public class game extends Canvas implements Runnable{
-    // Bounding boxes för målet och för musen
+    // Bounding boxes för målet och för tangenterna
     Rectangle target;
     Rectangle striker;
     // Slumpgenerator för att slumpa ut nya mål
@@ -34,7 +34,7 @@ public class game extends Canvas implements Runnable{
 
     public game() {
         R = new Random();
-        // skapar target på lämplig plats
+        // skapar target på lämplig plats i x led
         target = new Rectangle(R.nextInt(width-50),10, 60,45);
 
         //bestämmer att spelaren var spelaren börjar
