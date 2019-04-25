@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Random;
+import javax.swing.JOptionPane;
 
 public class game extends Canvas implements Runnable{
     // Bounding boxes för målet och för musen
@@ -18,18 +19,25 @@ public class game extends Canvas implements Runnable{
     BufferedImage targetImg;
     BufferedImage strikerImg;
 
+    int targetSpeed;
+    int strikerSpeed = 10;
+
+
     BufferStrategy bs;
+    //bestämmer storlek på spelplanen
     int width = 800;
     int height = 600;
     Thread thread;
     boolean running = false;
-    int speed = 4;
+    //int speed;
+    int hits = 0;
+
     public game() {
         R = new Random();
-        // Skapa boundingboxes på lämplig plats
+        // skapar target på lämplig plats
         target = new Rectangle(R.nextInt(width-50),10, 60,45);
 
-
+        //bestämmer att spelaren var spelaren börjar
         striker = new Rectangle(width, height,40,40);
         striker.x = 502;
         striker.y = 522;
@@ -44,14 +52,12 @@ public class game extends Canvas implements Runnable{
         setSize(width, height);
         JFrame frame = new JFrame("Grafik med kollisioner");
         frame.add(this);
-        // Lägg till en lyssnare för musen (MouseMotionListener eftersom vi vill kolla när musen rör sig)
-        //this.addMouseMotionListener(new MML());
+        // Lägg till en lyssnare för tangentbordet för att kunna styra spelaren
         this.addKeyListener(new  game.KL());
 
 
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        // Dölj muspekaren genom att ersätta den med en transparant bild
 
         frame.pack();
         frame.setVisible(true);
@@ -59,9 +65,11 @@ public class game extends Canvas implements Runnable{
 
     /**
      * Start, stop och run är metoder som kommer från Runnable. Det gör att vi kan starta en ny processortråd
-     * som kör runmetoden där vi kan rita upp skärmen
+     * som kör runmetoden där man kan rita upp skärmen
      */
     public synchronized void start() {
+        //man får skriva in hastighet för target
+        targetSpeed = Integer.parseInt(JOptionPane.showInputDialog(null,"Välj svårighetsgrad mellan 1-10. dubbeltryck på OK"));
         running = true;
         thread = new Thread(this);
         thread.start();
@@ -76,16 +84,14 @@ public class game extends Canvas implements Runnable{
         }
     }
 
-    /* Eftersom vi vill ta kontroll över hur snabbt vår animering updateras bestämmer vi en tid mellan varje uppdatering
-       Tiden mellan två uppdateringar blir 1 /30 sekund (30 ups eller fps). Delta anger i hur nära vi är en ny uppdatering.
-       När delta blir 1 är det dags att rita igen. delta nollställs inte eftersom det kan hända att något tagit lång tid
-       och att vi måste göra flera uppdateringar efter varandra.
+    /* bestämmer att fps eller ups 60. Delta anger i hur nära vi är en ny uppdatering.
+       När delta blir 1 är det dags att rita igen. delta nollställs inte eftersom man måste göra flera uppdateringar efter varandra.
        Här ligger update och render i samma tidssteg. Det går att separera dessa. Egentligen kan vi rita ut hur fort som
        helst (lägga render utanför while(delta>1)) Det viktiga är att update anropas med konstant hastighet eftersom det
        är den som simulerar tiden i animeringar.
      */
     public void run() {
-        double ns = 1000000000.0 / 30.0;
+        double ns = 1000000000.0 / 60.0;
         double delta = 0;
         long lastTime = System.nanoTime();
 
@@ -106,7 +112,7 @@ public class game extends Canvas implements Runnable{
     }
 
     /**
-     * Eftersom vi inte längre behöver paint och repaint döper jag om metoden till render
+     * Eftersom vi inte längre behöver paint och repaint döps metoden om till render
      */
     public void render() {
         bs = getBufferStrategy();
@@ -132,15 +138,18 @@ public class game extends Canvas implements Runnable{
 
     // Uppdatera inget i detta exempel. target skulle kunna röra sig...
     private void update() {
-        target.y = target.y+speed;
+        target.y = target.y+targetSpeed;
         if (striker.intersects(target)) {
             target = new Rectangle(R.nextInt(width - 50), 10, 60, 45);
+            hits++;
+        }
+        if (target.y>600){
+            JOptionPane.showMessageDialog(null,"du tog "+hits+ " ailiens! tryck OK för att avsluta");
+            System.exit(0);
         }
     }
 
-    /* Tydligen krockar mouselistener-eventen med awt-komponenterna i guit
-       Lösningen (och god sed) är att starta guit på följande sätt
-     */
+
     public static void main(String[] args) {
         game minGrafik = new game();
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -151,10 +160,9 @@ public class game extends Canvas implements Runnable{
         minGrafik.start();
     }
 
-    /*
-        keyListener lyssnar efter tangentbordet
-     */
 
+     //keyListener lyssnar efter tangentbordet
+     // KL står för keylistner
     private class KL implements KeyListener {
 
 
@@ -166,22 +174,21 @@ public class game extends Canvas implements Runnable{
         @Override
         public void keyPressed(KeyEvent e) {
 
+            //39 och 37 är höger och vänster piltangen lägger till att dom ska kontrollera striker med hastigheten strikerspeed
+
             int key = e.getKeyCode();
             if (key == 39) {
-                striker.x = striker.x+speed;
-                //player.moveRight = true;
+                striker.x = striker.x+strikerSpeed;
             }
             if (key == 37) {
-                //player.moveLeft = true;
-                striker.x = striker.x-speed;
+                striker.x = striker.x-strikerSpeed;
             }
 
         }
 
         @Override
         public void keyReleased(KeyEvent e) {
-            //player.moveLeft = false;
-            //player.moveRight = false;
+
         }
     }
 }
